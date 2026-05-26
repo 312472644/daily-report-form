@@ -173,6 +173,7 @@
 <script setup>
 import { ref, reactive, computed, onMounted, h } from 'vue';
 import { useMessage } from 'naive-ui';
+import { useRouter } from 'vue-router';
 import { getAllReports, deleteReport as deleteReportDB } from '../utils/db';
 import { exportToMarkdown, exportToCSV } from '../utils/export';
 import DetailModal from './DetailModal.vue';
@@ -182,7 +183,7 @@ import dayjs from 'dayjs';
 import { NButton } from 'naive-ui';
 
 const message = useMessage();
-const emit = defineEmits(['edit']);
+const router = useRouter();
 
 const reports = ref([]);
 const showDetailModal = ref(false);
@@ -191,8 +192,8 @@ const selectedReport = ref(null);
 
 const searchForm = reactive({
   dateRange: null,
-  project: '',
-  workType: '',
+  project: null,
+  workType: null,
   keyword: '',
 });
 
@@ -218,29 +219,29 @@ const columns = [
         h(
           NButton,
           {
-            quaternary: true,
+            text: true,
             type: 'primary',
             onClick: () => viewDetail(row),
           },
-          '查看',
+          () => '查看',
         ),
         h(
           NButton,
           {
-            quaternary: true,
+            text: true,
             type: 'info',
             onClick: () => editReport(row),
           },
-          '编辑',
+          () => '编辑',
         ),
         h(
           NButton,
           {
-            quaternary: true,
+            text: true,
             type: 'error',
             onClick: () => deleteReport(row),
           },
-          '删除',
+          () => '删除',
         ),
       ]),
   },
@@ -328,7 +329,7 @@ const viewDetail = record => {
 };
 
 const editReport = record => {
-  emit('edit', record.date);
+  router.push({ path: '/form', query: { date: record.date } });
 };
 
 const deleteReport = async record => {

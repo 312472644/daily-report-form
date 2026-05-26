@@ -8,12 +8,8 @@
               <span class="logo-text">日报填报系统</span>
             </div>
             <nav class="header-nav">
-              <button class="nav-item" :class="{ active: currentPage === 'form' }" @click="currentPage = 'form'">
-                新增日报
-              </button>
-              <button class="nav-item" :class="{ active: currentPage === 'list' }" @click="currentPage = 'list'">
-                报告列表
-              </button>
+              <router-link class="nav-item" active-class="active" to="/form"> 新增日报 </router-link>
+              <router-link class="nav-item" active-class="active" to="/list"> 报告列表 </router-link>
             </nav>
           </div>
           <div class="header-right">
@@ -54,34 +50,25 @@
       </header>
 
       <main class="app-content">
-        <DailyReportForm v-if="currentPage === 'form'" :key="formKey" :date="editDate" @saved="handleSaved" />
-        <ReportList v-if="currentPage === 'list'" ref="reportListRef" @edit="handleEdit" />
+        <router-view />
       </main>
     </div>
   </n-message-provider>
 </template>
 
 <script setup>
-import { ref } from 'vue';
-import DailyReportForm from './components/DailyReportForm.vue';
-import ReportList from './components/ReportList.vue';
+import { useRouter } from 'vue-router';
+import { watch } from 'vue';
 
-const currentPage = ref('form');
-const editDate = ref('');
-const formKey = ref(0);
-const reportListRef = ref(null);
+const router = useRouter();
 
-const handleSaved = () => {
-  if (reportListRef.value) {
-    reportListRef.value.refresh();
-  }
-};
-
-const handleEdit = date => {
-  editDate.value = date;
-  formKey.value++;
-  currentPage.value = 'form';
-};
+watch(
+  () => router.currentRoute.value.meta.title,
+  newTitle => {
+    document.title = `日报填报系统 - ${newTitle}`;
+  },
+  { immediate: true },
+);
 </script>
 
 <style scoped>
@@ -135,6 +122,7 @@ const handleEdit = date => {
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.3s ease;
+  text-decoration: none;
 }
 
 .nav-item:hover {

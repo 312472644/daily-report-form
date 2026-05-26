@@ -20,11 +20,17 @@
           <n-grid :cols="4" :x-gap="16">
             <n-gi>
               <div class="work-item-field">
-                <label class="field-label">项目名称</label>
+                <div class="field-header">
+                  <label class="field-label">项目名称</label>
+                  <n-button v-if="index === 0" size="small" text @click="showProjectManager = true" class="manage-btn">
+                    管理项目
+                  </n-button>
+                </div>
                 <n-select
                   v-model:value="item.project"
-                  :options="projectOptions"
-                  placeholder="请选择项目名称"
+                  placeholder="请选择或输入项目名称"
+                  :options="localProjectOptions"
+                  filterable
                   style="width: 100%"
                 />
               </div>
@@ -68,7 +74,9 @@
           </div>
         </div>
 
-        <n-button type="dashed" block @click="addItem" style="margin-top: 16px"> + 新增工作项 </n-button>
+        <n-button dashed type="primary" size="large" block @click="addItem" style="margin-top: 16px">
+          + 新增工作项
+        </n-button>
       </div>
 
       <div class="form-footer">
@@ -76,6 +84,14 @@
         <n-button type="primary" @click="saveReport" :loading="loading"> 保存日报 </n-button>
       </div>
     </n-card>
+
+    <ProjectManager
+      :visible="showProjectManager"
+      :projects="customProjects"
+      @close="showProjectManager = false"
+      @add="handleAddProject"
+      @remove="handleRemoveProject"
+    />
   </div>
 </template>
 
@@ -83,42 +99,65 @@
 import { ref, reactive, onMounted, computed, watch } from 'vue';
 import { useMessage } from 'naive-ui';
 import { saveReport as saveReportDB, getReport as getReportDB } from '../utils/db';
-import { projectOptions, workTypeOptions } from '../data/options';
+import { projectOptions as defaultProjectOptions, workTypeOptions } from '../data/options';
 import dayjs from 'dayjs';
+import ProjectManager from './ProjectManager.vue';
 
 const message = useMessage();
 
-const props = defineProps({
-  date: {
-    type: String,
-    default: '',
-  },
-});
+import { useRoute } from 'vue-router';
 
 const emit = defineEmits(['saved']);
 
+const route = useRoute();
+
 const loading = ref(false);
+const customProjects = ref([]);
+
+const localProjectOptions = computed(() => {
+  return [
+    ...defaultProjectOptions,
+    ...customProjects.value.map(project => ({
+      value: project,
+      label: project,
+    })),
+  ];
+});
+
 const formData = reactive({
-  date: props.date ? dayjs(props.date).valueOf() : dayjs().valueOf(),
-  items: [{ project: '', module: '', type: '', content: '' }],
+  date: route.query.date ? dayjs(route.query.date).valueOf() : dayjs().valueOf(),
+  items: [{ project: null, module: '', type: '', content: '' }],
 });
 
-const formattedDate = computed(() => {
-  return dayjs(formData.date).format('YYYY-MM-DD');
-});
-
-watch(
-  () => props.date,
-  newDate => {
-    if (newDate) {
-      formData.date = dayjs(newDate).valueOf();
-      loadReport();
+const loadCustomProjects = () => {
+  try {
+    const saved = localStorage.getItem('customProjects');
+    if (saved) {
+      customProjects.value = JSON.parse(saved);
     }
-  },
-);
+  } catch (e) {
+    console.error('加载自定义项目失败:', e);
+  }
+};
 
 const addItem = () => {
-  formData.items.push({ project: '', module: '', type: '', content: '' });
+  formData.items.push({ project: null, module: '', type: '', content: '' });
+};
+
+const showProjectManager = ref(false);
+
+const handleAddProject = projectName => {
+  customProjects.value.push(projectName);
+  localStorage.setItem('customProjects', JSON.stringify(customProjects.value));
+};
+
+const handleRemoveProject = projectName => {
+  const index = customProjects.value.indexOf(projectName);
+  if (index > -1) {
+    customProjects.value.splice(index, 1);
+    localStorage.setItem('customProjects', JSON.stringify(customProjects.value));
+    message.success(`已删除项目: ${projectName}`);
+  }
 };
 
 const removeItem = index => {
@@ -126,7 +165,7 @@ const removeItem = index => {
 };
 
 const handleCancel = () => {
-  formData.items = [{ project: '', module: '', type: '', content: '' }];
+  formData.items = [{ project: null, module: '', type: '', content: '' }];
 };
 
 const validateForm = () => {
@@ -180,16 +219,11 @@ const saveReport = async () => {
 };
 
 const loadReport = async () => {
-  const dateStr = dayjs(formData.date).format('YYYY-MM-DD');
-  const report = await getReportDB(dateStr);
-  if (report) {
-    formData.items = report.items.map(item => ({ ...item }));
-  } else {
-    formData.items = [{ project: '', module: '', type: '', content: '' }];
-  }
+  formData.items = [{ project: null, module: '', type: '', content: '' }];
 };
 
 onMounted(() => {
+  loadCustomProjects();
   loadReport();
 });
 </script>
@@ -293,5 +327,16 @@ onMounted(() => {
   align-items: center;
   padding-top: 20px;
   border-top: 1px solid #e2e8f0;
+}
+
+.field-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.manage-btn {
+  color: #10b981;
 }
 </style>
