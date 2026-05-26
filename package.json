@@ -1,0 +1,25 @@
+{
+  "name": "daily-report-form",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "autoprefixer": "^10.5.0",
+    "dayjs": "^1.11.21",
+    "idb": "^8.0.3",
+    "lucide-vue-next": "^1.0.0",
+    "naive-ui": "^2.44.1",
+    "postcss": "^8.5.15",
+    "tailwindcss": "^3.4.19",
+    "vue": "^3.5.13"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.2.3",
+    "vite": "^6.3.5"
+  }
+}
