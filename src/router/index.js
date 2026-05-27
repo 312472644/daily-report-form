@@ -1,4 +1,4 @@
-import { createRouter, createWebHashHistory } from 'vue-router';
+import { createRouter, createWebHistory } from 'vue-router';
 import DailyReportForm from '../components/DailyReportForm.vue';
 import ReportList from '../components/ReportList.vue';
 import NotFound from '../components/NotFound.vue';
@@ -27,10 +27,8 @@ const routes = [
   },
 ];
 
-console.log(import.meta.env.PROD);
-
 const router = createRouter({
-  history: createWebHashHistory(import.meta.env.PROD ? '/Daily-Report-Form/' : '/'),
+  history: createWebHistory(import.meta.env.PROD ? '/Daily-Report-Form/' : '/'),
   routes,
 });
 
