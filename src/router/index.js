@@ -28,7 +28,7 @@ const routes = [
 ];
 
 const router = createRouter({
-  history: createWebHistory('/Daily-Report-Form/'),
+  history: createWebHistory(),
   routes,
 });
 
