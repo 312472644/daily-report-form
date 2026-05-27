@@ -28,7 +28,7 @@ const routes = [
 ];
 
 const router = createRouter({
-  history: createWebHistory(import.meta.env.PROD ? '/Daily-Report-Form/' : '/'),
+  history: createWebHistory('/Daily-Report-Form/'),
   routes,
 });
 
