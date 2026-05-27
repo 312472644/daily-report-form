@@ -7,7 +7,7 @@ export default defineConfig(({ mode }) => {
     base: mode === 'development' ? '/' : '/Daily-Report-Form/',
     plugins: [vue()],
     server: {
-      port: 3000,
+      port: 9000,
     },
   };
 });

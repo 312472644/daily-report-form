@@ -1,5 +1,124 @@
-# Vue 3 + Vite
+# 日报填报系统
 
-This template should help get you started developing with Vue 3 in Vite. The template uses Vue 3 `<script setup>` SFCs, check out the [script setup docs](https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup) to learn more.
+纯前端轻量级日报填报系统，数据存储在浏览器本地（IndexedDB），用于个人每日工作记录与导出。
 
-Learn more about IDE Support for Vue in the [Vue Docs Scaling up Guide](https://vuejs.org/guide/scaling-up/tooling.html#ide-support).
+## 功能特性
+
+### 日报填报
+- **日期选择**：支持选择填报日期
+- **工作项管理**：新增、删除工作内容
+- **项目名称**：支持选择预设项目或手动添加自定义项目（自动保存到本地缓存）
+- **模块名称**：输入工作所属模块
+- **工作类型**：支持功能开发、Bug修复、UI调整等类型选择
+- **工作内容**：详细描述工作内容
+
+### 历史记录
+- **日报列表**：查看所有已保存的日报
+- **条件筛选**：按日期范围、项目名称、工作类型、关键词搜索
+- **统计卡片**：展示日报总数、工作项总数、项目数统计
+- **操作功能**：
+  - 查看日报详情
+  - 编辑已有日报
+  - 删除日报
+
+### 数据导出
+- **导出格式**：支持 Markdown 和 CSV 格式
+- **导出范围**：全部日报或按日期范围导出
+
+### 项目管理
+- **管理自定义项目**：在表单中可管理已添加的自定义项目
+- **新增项目**：添加新的项目名称
+- **删除项目**：移除不需要的自定义项目
+- **持久化存储**：自定义项目保存到浏览器 localStorage
+
+## 技术栈
+
+- **框架**：Vue 3 + Vite
+- **UI组件库**：Naive UI
+- **路由管理**：Vue Router 4
+- **本地存储**：IndexedDB（使用 idb 库）
+- **日期处理**：dayjs
+
+## 项目结构
+
+```
+src/
+├── components/
+│   ├── DailyReportForm.vue    # 日报填报表单组件
+│   ├── ReportList.vue         # 历史记录列表组件
+│   ├── DetailModal.vue       # 日报详情弹窗组件
+│   ├── ExportModal.vue        # 导出日报弹窗组件
+│   ├── ProjectManager.vue     # 项目管理弹窗组件
+│   └── NotFound.vue          # 404页面组件
+├── data/
+│   └── options.js            # 下拉选项配置
+├── router/
+│   └── index.js              # 路由配置
+├── utils/
+│   ├── db.js                 # IndexedDB 数据库操作
+│   └── export.js             # 导出功能工具
+├── App.vue                   # 应用入口组件
+├── main.js                   # 应用入口文件
+└── style.css                # 全局样式
+```
+
+## 路由说明
+
+| 路径 | 页面 | 说明 |
+|------|------|------|
+| `/` | 跳转至 `/form` | 首页重定向 |
+| `/form` | 日报填报 | 新增/编辑日报 |
+| `/list` | 历史记录 | 查看日报列表 |
+| `/:pathMatch(.*)*` | 404页面 | 未匹配路由 |
+
+## 数据存储
+
+### IndexedDB
+- **数据库名**：`daily-report-db`
+- **存储内容**：日报数据（日期、工作项列表）
+
+### localStorage
+- **键名**：`customProjects`
+- **存储内容**：用户自定义的项目名称列表
+
+## 快速开始
+
+```bash
+# 安装依赖
+npm install
+
+# 启动开发服务器
+npm run dev
+
+# 构建生产版本
+npm run build
+```
+
+## 使用说明
+
+### 新增日报
+1. 点击导航栏「新增日报」
+2. 选择日期
+3. 填写工作内容（至少一项）
+4. 点击「保存日报」
+
+### 编辑日报
+1. 进入「报告列表」页面
+2. 找到目标日报，点击「编辑」按钮
+3. 修改内容后保存
+
+### 导出日报
+1. 进入「报告列表」页面
+2. 点击「导出日报」按钮
+3. 选择导出格式和范围
+4. 确认导出
+
+### 管理项目
+1. 在日报填报页面，点击「项目名称」右侧的「管理项目」
+2. 在弹窗中可新增或删除自定义项目
+
+## 注意事项
+
+- 数据存储在浏览器本地，更换浏览器或清除数据将导致日报数据丢失
+- 建议定期备份重要数据
+- 支持现代浏览器（Chrome、Firefox、Safari、Edge）
