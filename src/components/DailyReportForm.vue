@@ -28,7 +28,7 @@
               <n-gi>
                 <div class="work-item-field">
                   <div class="field-header">
-                    <label class="field-label">项目名称</label>
+                    <label class="field-label required">项目名称</label>
                     <n-button
                       v-if="index === 0"
                       size="small"
@@ -51,20 +51,20 @@
 
               <n-gi>
                 <div class="work-item-field">
-                  <label class="field-label">模块名称</label>
-                  <n-input v-model:value="item.module" placeholder="请输入模块名称" style="width: 100%" />
-                </div>
-              </n-gi>
-
-              <n-gi>
-                <div class="work-item-field">
-                  <label class="field-label">工作类型</label>
+                  <label class="field-label required">工作类型</label>
                   <n-select
                     v-model:value="item.type"
                     :options="workTypeOptions"
                     placeholder="请选择工作类型"
                     style="width: 100%"
                   />
+                </div>
+              </n-gi>
+
+              <n-gi>
+                <div class="work-item-field">
+                  <label class="field-label">模块名称</label>
+                  <n-input v-model:value="item.module" placeholder="请输入模块名称" style="width: 100%" />
                 </div>
               </n-gi>
 
@@ -80,7 +80,12 @@
               <n-input
                 v-model:value="item.content"
                 type="textarea"
-                :rows="3"
+                :maxlength="500"
+                show-count
+                :autosize="{
+                  minRows: 5,
+                  maxRows: 10,
+                }"
                 placeholder="请输入工作内容"
                 style="width: 100%"
               />
@@ -198,11 +203,14 @@ const handleChangeDate = val => {
 };
 
 const handleUpdateValue = (val, item) => {
+  item.project = null;
   // 校验当前日期是否有相同项目名称
-  const existingProject = formData.items.find(item => item.project === val);
+  const existingProject = formData.items.find(t => t.project === val);
   if (existingProject) {
     message.error(`项目名称 ${val} 已存在`);
     item.project = null;
+  } else {
+    item.project = val;
   }
 };
 
@@ -270,7 +278,7 @@ const loadReport = async () => {
       formData.items = [{ project: null, module: '', type: null, content: '' }];
     }
   } finally {
-    setTimeout(() => (showLoading.value = false), 2 * 1000);
+    setTimeout(() => (showLoading.value = false), 1 * 1000);
   }
 };
 
@@ -280,122 +288,134 @@ onMounted(() => {
 });
 </script>
 
-<style scoped>
+<style lang="scss">
 .daily-report-form {
   width: 100%;
-}
+  .form-card {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  }
 
-.form-card {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-}
+  .form-header {
+    margin-bottom: 24px;
+  }
 
-.form-header {
-  margin-bottom: 24px;
-}
+  .form-title {
+    font-size: 24px;
+    font-weight: 600;
+    color: #1a2634;
+    margin: 0 0 8px 0;
+  }
 
-.form-title {
-  font-size: 24px;
-  font-weight: 600;
-  color: #1a2634;
-  margin: 0 0 8px 0;
-}
+  .form-subtitle {
+    font-size: 14px;
+    color: #64748b;
+    margin: 0;
+  }
 
-.form-subtitle {
-  font-size: 14px;
-  color: #64748b;
-  margin: 0;
-}
+  .form-body {
+    margin-bottom: 24px;
+    padding-bottom: 24px;
+  }
 
-.form-body {
-  margin-bottom: 24px;
-  padding-bottom: 24px;
-}
+  .form-group {
+    margin-bottom: 20px;
+  }
 
-.form-group {
-  margin-bottom: 20px;
-}
+  .form-label {
+    display: block;
+    font-size: 14px;
+    font-weight: 500;
+    color: #334155;
+    margin-bottom: 8px;
+  }
 
-.form-label {
-  display: block;
-  font-size: 14px;
-  font-weight: 500;
-  color: #334155;
-  margin-bottom: 8px;
-}
+  .section-divider {
+    display: flex;
+    align-items: center;
+    margin: 24px 0;
+  }
 
-.section-divider {
-  display: flex;
-  align-items: center;
-  margin: 24px 0;
-}
+  .section-divider::before,
+  .section-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background-color: #e2e8f0;
+  }
 
-.section-divider::before,
-.section-divider::after {
-  content: '';
-  flex: 1;
-  height: 1px;
-  background-color: #e2e8f0;
-}
+  .divider-text {
+    padding: 0 16px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #64748b;
+  }
 
-.divider-text {
-  padding: 0 16px;
-  font-size: 14px;
-  font-weight: 500;
-  color: #64748b;
-}
+  .work-item-card {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 16px;
+  }
 
-.work-item-card {
-  background: #fff;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  padding: 20px;
-  margin-bottom: 16px;
-}
+  .work-item-field {
+    display: flex;
+    flex-direction: column;
+  }
 
-.work-item-field {
-  display: flex;
-  flex-direction: column;
-}
+  .field-label {
+    font-size: 13px;
+    font-weight: 500;
+    color: #334155;
+    margin-bottom: 6px;
+  }
 
-.field-label {
-  font-size: 13px;
-  font-weight: 500;
-  color: #334155;
-  margin-bottom: 6px;
-}
+  .action-field {
+    justify-content: flex-end;
+  }
 
-.action-field {
-  justify-content: flex-end;
-}
+  .work-content-group {
+    display: flex;
+    flex-direction: column;
+    margin-top: 16px;
+  }
 
-.work-content-group {
-  display: flex;
-  flex-direction: column;
-  margin-top: 16px;
-}
+  .form-footer {
+    margin: -24px;
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    align-items: center;
+    padding: 10px;
+    position: sticky;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background-color: #fff;
+    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.06);
+  }
 
-.form-footer {
-  margin: -24px;
-  display: flex;
-  gap: 12px;
-  justify-content: flex-end;
-  align-items: center;
-  padding: 10px;
-  position: sticky;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background-color: #fff;
-  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.06);
-}
+  .field-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
 
-.field-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.manage-btn {
-  color: #10b981;
+  .manage-btn {
+    color: #10b981;
+  }
+  .required {
+    position: relative;
+    padding-left: 10px;
+    &::after {
+      content: '*';
+      position: absolute;
+      top: 0;
+      left: 0;
+      font-size: 12px;
+      font-weight: 500;
+      color: #d03050;
+    }
+  }
 }
 </style>

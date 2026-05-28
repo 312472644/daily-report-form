@@ -26,49 +26,24 @@
                 <span class="logo-text">日报填报系统</span>
               </div>
               <nav class="header-nav">
-                <router-link class="nav-item" active-class="active" to="/form"> 新增日报 </router-link>
-                <router-link class="nav-item" active-class="active" to="/list"> 报告列表 </router-link>
+                <router-link
+                  v-for="item in navItems"
+                  :key="item.path"
+                  class="nav-item"
+                  active-class="active"
+                  :to="item.path"
+                >
+                  {{ item.meta.title }}
+                </router-link>
               </nav>
             </div>
-            <!-- <div class="header-right">
-              <button class="icon-btn">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                >
-                  <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-                  <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-                </svg>
-              </button>
-              <button class="icon-btn">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                >
-                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                  <circle cx="12" cy="7" r="4" />
-                </svg>
-              </button>
-            </div> -->
           </div>
         </header>
 
         <main class="app-content">
-          <router-view />
+          <n-dialog-provider>
+            <router-view />
+          </n-dialog-provider>
         </main>
       </div>
     </n-message-provider>
@@ -79,9 +54,12 @@
 import { NConfigProvider, zhCN, dateZhCN } from 'naive-ui';
 import { useRouter } from 'vue-router';
 import { onBeforeUnmount, onMounted, watch, ref } from 'vue';
+import { routes } from './router/index';
 
 const router = useRouter();
 const isOverHeader = ref(false);
+
+const navItems = routes.filter(item => !item.meta.hidden);
 
 function handleScroll() {
   isOverHeader.value = document.documentElement.scrollTop > 70;
@@ -123,7 +101,7 @@ watch(
   box-shadow: 0 0 4px 1px #dadde1;
   &.is-over-header {
     backdrop-filter: blur(10px);
-    background-color: rgba(255, 255, 255, 0.1);
+    background-color: rgba(255, 255, 255, 0.4);
   }
 }
 
@@ -193,5 +171,11 @@ watch(
   padding: 30px 40px;
   max-width: 1400px;
   margin: 0 auto;
+  min-height: calc(100% - 60px);
+  height: calc(100% - 60px);
+}
+
+.n-config-provider {
+  height: 100%;
 }
 </style>

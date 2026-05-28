@@ -1,18 +1,33 @@
 export const projectOptions = [
   { value: '合同与计价系统', label: '合同与计价系统' },
-  { value: '专家活动App', label: '专家活动App' },
-  { value: '供应商管理系统', label: '供应商管理系统' },
-  { value: '项目管理平台', label: '项目管理平台' },
-  { value: '其他', label: '其他' }
-]
+  { value: '安全穿透式系统', label: '安全穿透式系统' },
+  { value: '项目经济运行系统', label: '项目经济运行系统' },
+  { value: '路基智能施工协管平台', label: '路基智能施工协管平台' },
+  { value: '其他', label: '其他' },
+];
 
 export const workTypeOptions = [
   { value: '功能开发', label: '功能开发' },
   { value: 'Bug修复', label: 'Bug修复' },
-  { value: 'UI调整', label: 'UI调整' },
   { value: '需求分析', label: '需求分析' },
   { value: '文档编写', label: '文档编写' },
-  { value: '测试验证', label: '测试验证' },
-  { value: '会议沟通', label: '会议沟通' },
-  { value: '其他', label: '其他' }
-]
+  { value: '其他', label: '其他' },
+];
+
+export const workTypeTagMap = {
+  功能开发: {
+    tagType: 'info',
+  },
+  Bug修复: {
+    tagType: 'error',
+  },
+  需求分析: {
+    tagType: 'success',
+  },
+  文档编写: {
+    tagType: 'default',
+  },
+  其他: {
+    tagType: 'warning',
+  },
+};

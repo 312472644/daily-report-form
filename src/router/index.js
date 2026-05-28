@@ -3,26 +3,28 @@ import DailyReportForm from '../components/DailyReportForm.vue';
 import ReportList from '../components/ReportList.vue';
 import NotFound from '../components/NotFound.vue';
 
-const routes = [
+export const routes = [
   {
     path: '/',
     redirect: '/form',
+    meta: { hidden: true },
   },
   {
     path: '/form',
     name: 'DailyReportForm',
-    meta: { title: '新增日报' },
+    meta: { title: '日报填写' },
     component: DailyReportForm,
   },
   {
     path: '/list',
     name: 'ReportList',
-    meta: { title: '报告列表' },
+    meta: { title: '日报记录' },
     component: ReportList,
   },
   {
     path: '/:pathMatch(.*)*',
     name: 'NotFound',
+    meta: { hidden: true },
     component: NotFound,
   },
 ];

@@ -52,8 +52,8 @@
           </svg>
         </div>
         <div class="stat-info">
-          <span class="stat-label">累计报告</span>
-          <span class="stat-value">{{ reports.length }}篇</span>
+          <span class="stat-label">当月已报</span>
+          <span class="stat-value">{{ pendingDays }}篇</span>
         </div>
       </div>
 
@@ -75,8 +75,8 @@
           </svg>
         </div>
         <div class="stat-info">
-          <span class="stat-label">待填报</span>
-          <span class="stat-value">{{ pendingDays }}篇</span>
+          <span class="stat-label">累计报告</span>
+          <span class="stat-value">{{ reports.length }}篇</span>
         </div>
       </div>
     </div>
@@ -87,6 +87,7 @@
           <n-gi>
             <n-form-item label="日期范围">
               <n-date-picker
+                clearable
                 v-model:value="searchForm.dateRange"
                 type="daterange"
                 style="width: 100%"
@@ -121,8 +122,18 @@
           </n-gi>
           <n-gi>
             <div class="search-actions">
-              <n-button type="primary" @click="search">查询</n-button>
-              <n-button @click="reset">重置</n-button>
+              <n-button type="primary">
+                <template #icon>
+                  <n-icon><Search /></n-icon>
+                </template>
+                <span>查询</span>
+              </n-button>
+              <n-button @click="reset">
+                <template #icon>
+                  <n-icon><Reset /></n-icon>
+                </template>
+                <span>重置</span>
+              </n-button>
             </div>
           </n-gi>
         </n-grid>
@@ -156,9 +167,10 @@
 
       <div class="table-container">
         <n-data-table
+          :loading="showLoading"
+          max-height="100%"
           :columns="columns"
           :data="filteredReports"
-          :pagination="pagination"
           :row-key="row => row.date"
           :empty-content="emptyContent"
         />
@@ -172,7 +184,7 @@
 
 <script setup>
 import { ref, reactive, computed, onMounted, h } from 'vue';
-import { useMessage } from 'naive-ui';
+import { useMessage, useDialog } from 'naive-ui';
 import { useRouter } from 'vue-router';
 import { getAllReports, deleteReport as deleteReportDB } from '../utils/db';
 import { exportToMarkdown, exportToCSV } from '../utils/export';
@@ -180,10 +192,14 @@ import DetailModal from './DetailModal.vue';
 import ExportModal from './ExportModal.vue';
 import { projectOptions, workTypeOptions } from '../data/options';
 import dayjs from 'dayjs';
-import { NButton } from 'naive-ui';
+import { NButton, NTag } from 'naive-ui';
+import { Search, Reset } from '@vicons/carbon';
+import { workTypeTagMap } from '../data/options';
 
 const message = useMessage();
 const router = useRouter();
+const dialog = useDialog();
+const showLoading = ref(false);
 
 const reports = ref([]);
 const showDetailModal = ref(false);
@@ -198,29 +214,37 @@ const searchForm = reactive({
 });
 
 const columns = [
-  { title: '日期', key: 'date', width: 150 },
+  { title: '序号', key: 'index', width: 60, align: 'center', render: (row, index) => index + 1 },
+  { title: '日期', key: 'date', width: 120, align: 'center' },
   {
     title: '工作项数量',
     key: 'count',
     width: 120,
+    align: 'center',
     render: row => row.items.length,
   },
   {
-    title: '项目名称汇总',
+    title: '工作类型',
+    key: 'type',
+    render: row => getType(row),
+  },
+  {
+    title: '项目名称',
     key: 'projects',
     render: row => getProjectSummary(row),
   },
   {
     title: '操作',
     key: 'actions',
-    width: 200,
+    width: 140,
+    align: 'center',
     render: row =>
       h('div', { class: 'actions' }, [
         h(
           NButton,
           {
+            class: 'action-btn',
             text: true,
-            type: 'primary',
             onClick: () => viewDetail(row),
           },
           () => '查看',
@@ -228,6 +252,7 @@ const columns = [
         h(
           NButton,
           {
+            class: 'action-btn',
             text: true,
             type: 'info',
             onClick: () => editReport(row),
@@ -237,6 +262,7 @@ const columns = [
         h(
           NButton,
           {
+            class: 'action-btn',
             text: true,
             type: 'error',
             onClick: () => deleteReport(row),
@@ -247,17 +273,23 @@ const columns = [
   },
 ];
 
-const pagination = {
-  pageSize: 10,
-  showSizePicker: true,
-  pageSizes: [10, 20, 50],
-  showQuickJumper: true,
-  showTotal: (total, range) => `显示 ${range[0]} 到 ${range[1]} 之 ${total} 项`,
-};
-
 const emptyContent = () => h('div', { class: 'empty' }, '暂无日报数据');
 
 const currentMonthDays = computed(() => {
+  const currentMonth = dayjs().month();
+  const currentYear = dayjs().year();
+  const daysInMonth = dayjs(`${currentYear}-${currentMonth + 1}`, 'YYYY-M').daysInMonth();
+  let workDays = 0;
+  for (let i = 1; i <= daysInMonth; i++) {
+    const dayOfWeek = dayjs(`${currentYear}-${currentMonth + 1}-${i}`, 'YYYY-M-D').day();
+    if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+      workDays++;
+    }
+  }
+  return workDays;
+});
+
+const pendingDays = computed(() => {
   const currentMonth = dayjs().month();
   const currentYear = dayjs().year();
   return reports.value.filter(r => {
@@ -266,18 +298,8 @@ const currentMonthDays = computed(() => {
   }).length;
 });
 
-const pendingDays = computed(() => {
-  const currentMonth = dayjs().month();
-  const currentYear = dayjs().year();
-  const daysInMonth = dayjs(`${currentYear}-${currentMonth + 1}`, 'YYYY-M').daysInMonth();
-  const reportedDays = reports.value.filter(r => {
-    const date = dayjs(r.date);
-    return date.month() === currentMonth && date.year() === currentYear;
-  }).length;
-  return Math.max(0, daysInMonth - reportedDays);
-});
-
 const filteredReports = computed(() => {
+  showLoading.value = true;
   let result = [...reports.value].filter(r => r && r.items && Array.isArray(r.items));
 
   if (searchForm.dateRange && Array.isArray(searchForm.dateRange) && searchForm.dateRange.length === 2) {
@@ -306,21 +328,32 @@ const filteredReports = computed(() => {
     );
   }
 
+  setTimeout(() => {
+    showLoading.value = false;
+  }, 500);
   return result.sort((a, b) => new Date(b.date) - new Date(a.date));
 });
+
+const getType = record => {
+  return h(
+    'div',
+    { class: 'type' },
+    Array.from(new Set(record.items.map(item => item.type))).map(type =>
+      h(NTag, { class: 'type-tag-item', type: workTypeTagMap[type].tagType }, () => type),
+    ),
+  );
+};
 
 const getProjectSummary = record => {
   const projects = [...new Set(record.items.map(item => item.project))];
   return projects.join('，');
 };
 
-const search = () => {};
-
 const reset = () => {
   searchForm.dateRange = null;
-  searchForm.project = '';
-  searchForm.workType = '';
-  searchForm.keyword = '';
+  searchForm.project = null;
+  searchForm.workType = null;
+  searchForm.keyword = null;
 };
 
 const viewDetail = record => {
@@ -333,15 +366,25 @@ const editReport = record => {
 };
 
 const deleteReport = async record => {
-  if (!confirm(`确定删除 ${record.date} 的日报吗？`)) return;
-
-  try {
-    await deleteReportDB(record.date);
-    await loadReports();
-    message.success('删除成功');
-  } catch (error) {
-    message.error('删除失败');
-  }
+  dialog.info({
+    title: '确认',
+    content: `你确定删除 ${record.date} 的日报吗？`,
+    positiveText: '确定',
+    negativeButtonProps: {
+      type: 'info',
+    },
+    negativeText: '取消',
+    draggable: false,
+    onPositiveClick: async () => {
+      try {
+        await deleteReportDB(record.date);
+        await loadReports();
+        message.success('删除成功');
+      } catch (error) {
+        message.error('删除失败');
+      }
+    },
+  });
 };
 
 const handleExport = formData => {
@@ -386,164 +429,168 @@ defineExpose({
 });
 </script>
 
-<style scoped>
+<style lang="scss">
 .report-list {
-  width: 100%;
-}
-
-.page-header {
-  margin-bottom: 24px;
-}
-
-.page-title {
-  font-size: 24px;
-  font-weight: 600;
-  color: #1a2634;
-  margin: 0 0 8px 0;
-}
-
-.page-subtitle {
-  font-size: 14px;
-  color: #64748b;
-  margin: 0;
-}
-
-.stats-cards {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 20px;
-  margin-bottom: 24px;
-}
-
-.stat-card {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 20px;
-  border-radius: 12px;
-}
-
-.stat-card.light-blue {
-  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
-}
-
-.stat-card.light-cyan {
-  background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
-}
-
-.stat-card.light-red {
-  background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
-}
-
-.stat-icon {
-  width: 48px;
-  height: 48px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 12px;
-  color: #fff;
-}
-
-.light-blue .stat-icon {
-  background: #3b82f6;
-}
-
-.light-cyan .stat-icon {
-  background: #0ea5e9;
-}
-
-.light-red .stat-icon {
-  background: #ef4444;
-}
-
-.stat-info {
   display: flex;
   flex-direction: column;
-}
+  width: 100%;
+  height: 100%;
+  .page-header {
+    margin-bottom: 24px;
+  }
 
-.stat-label {
-  font-size: 13px;
-  color: #64748b;
-}
+  .page-title {
+    font-size: 24px;
+    font-weight: 600;
+    color: #1a2634;
+    margin: 0 0 8px 0;
+  }
 
-.stat-value {
-  font-size: 24px;
-  font-weight: 600;
-  color: #1a2634;
-}
+  .page-subtitle {
+    font-size: 14px;
+    color: #64748b;
+    margin: 0;
+  }
 
-.search-card {
-  background: #fff;
-  border-radius: 12px;
-  padding: 20px;
-  margin-bottom: 24px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-}
+  .stats-cards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    margin-bottom: 24px;
+  }
 
-.search-actions {
-  display: flex;
-  gap: 12px;
-  margin-top: 24px;
-}
+  .stat-card {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 20px;
+    border-radius: 12px;
+  }
 
-.list-container {
-  background: #fff;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-  overflow: hidden;
-}
+  .stat-card.light-blue {
+    background: linear-gradient(135deg, #667eea 0%, #8b5cf6 100%);
+    color: #fff;
+  }
 
-.list-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 20px;
-  border-bottom: 1px solid #e2e8f0;
-}
+  .stat-card.light-cyan {
+    background: linear-gradient(135deg, #06b6d4 0%, #22c55e 100%);
+    color: #fff;
+  }
 
-.record-count {
-  font-size: 14px;
-  color: #64748b;
-}
+  .stat-card.light-red {
+    background: linear-gradient(135deg, #ec4899 0%, #f97316 100%);
+    color: #fff;
+  }
 
-.table-container {
-  padding: 20px;
-}
+  .stat-icon {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    color: rgba(255, 255, 255, 0.9);
+    background: rgba(255, 255, 255, 0.2);
+  }
 
-.actions {
-  display: flex;
-  gap: 12px;
-}
+  .stat-info {
+    display: flex;
+    flex-direction: column;
+  }
 
-.action-btn {
-  font-size: 14px;
-  border: none;
-  background: none;
-  cursor: pointer;
-  padding: 4px 0;
-  transition: color 0.3s ease;
-}
+  .stat-label {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.8);
+  }
 
-.action-btn.view {
-  color: #10b981;
-}
+  .stat-value {
+    font-size: 24px;
+    font-weight: 600;
+    color: #fff;
+  }
 
-.action-btn.edit {
-  color: #3b82f6;
-}
+  .search-card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  }
 
-.action-btn.delete {
-  color: #ef4444;
-}
+  .type-tag-item {
+    & + .type-tag-item {
+      margin-left: 8px;
+    }
+  }
 
-.action-btn:hover {
-  text-decoration: underline;
-}
+  .search-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 24px;
+  }
 
-.empty {
-  text-align: center;
-  padding: 40px;
-  color: #94a3b8;
+  .list-container {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    // overflow: hidden;
+    flex: 1 0 0;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .list-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    border-bottom: 1px solid #e2e8f0;
+  }
+
+  .record-count {
+    font-size: 14px;
+    color: #64748b;
+  }
+
+  .table-container {
+    padding: 20px;
+    flex: 1 0 0;
+    min-height: 0;
+    .n-data-table {
+      height: 100%;
+      .n-data-table-base-table {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+      }
+    }
+  }
+
+  .actions {
+    display: flex;
+    gap: 12px;
+  }
+
+  .action-btn {
+    font-size: 14px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    padding: 4px 0;
+    transition: color 0.3s ease;
+  }
+
+  .action-btn {
+    & + .action-btn {
+      margin-left: 8px;
+    }
+  }
+
+  .empty {
+    text-align: center;
+    padding: 40px;
+    color: #94a3b8;
+  }
 }
 </style>
