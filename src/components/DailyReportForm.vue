@@ -5,85 +5,112 @@
       <p class="form-subtitle">请准确记录您今日的工作进展与投入情况。</p>
     </div>
 
-    <n-card :bordered="false" class="form-card">
-      <div class="form-body">
-        <div class="form-group">
-          <label class="form-label">日期</label>
-          <n-date-picker v-model:value="formData.date" type="date" style="width: 100%" placeholder="选择日期" />
-        </div>
-
-        <div class="section-divider">
-          <span class="divider-text">工作内容</span>
-        </div>
-
-        <div v-for="(item, index) in formData.items" :key="index" class="work-item-card">
-          <n-grid :cols="4" :x-gap="16">
-            <n-gi>
-              <div class="work-item-field">
-                <div class="field-header">
-                  <label class="field-label">项目名称</label>
-                  <n-button v-if="index === 0" size="small" text @click="showProjectManager = true" class="manage-btn">
-                    管理项目
-                  </n-button>
-                </div>
-                <n-select
-                  v-model:value="item.project"
-                  placeholder="请选择或输入项目名称"
-                  :options="localProjectOptions"
-                  filterable
-                  style="width: 100%"
-                />
-              </div>
-            </n-gi>
-
-            <n-gi>
-              <div class="work-item-field">
-                <label class="field-label">模块名称</label>
-                <n-input v-model:value="item.module" placeholder="请输入模块名称" style="width: 100%" />
-              </div>
-            </n-gi>
-
-            <n-gi>
-              <div class="work-item-field">
-                <label class="field-label">工作类型</label>
-                <n-select
-                  v-model:value="item.type"
-                  :options="workTypeOptions"
-                  placeholder="请选择工作类型"
-                  style="width: 100%"
-                />
-              </div>
-            </n-gi>
-
-            <n-gi v-if="formData.items.length > 1">
-              <div class="work-item-field action-field">
-                <n-button type="error" @click="removeItem(index)">删除</n-button>
-              </div>
-            </n-gi>
-          </n-grid>
-
-          <div class="work-content-group">
-            <label class="field-label">工作内容</label>
-            <n-input
-              v-model:value="item.content"
-              type="textarea"
-              :rows="3"
-              placeholder="请输入工作内容"
+    <n-spin :show="showLoading" description="加载中...">
+      <n-card :bordered="false" class="form-card">
+        <div class="form-body">
+          <div class="form-group">
+            <label class="form-label">日期</label>
+            <n-date-picker
+              v-model:value="formData.date"
+              type="date"
               style="width: 100%"
+              placeholder="选择日期"
+              @update:value="handleChangeDate"
             />
           </div>
+
+          <div class="section-divider">
+            <span class="divider-text">工作内容</span>
+          </div>
+
+          <div v-for="(item, index) in formData.items" :key="index" class="work-item-card">
+            <n-grid :cols="4" :x-gap="16">
+              <n-gi>
+                <div class="work-item-field">
+                  <div class="field-header">
+                    <label class="field-label">项目名称</label>
+                    <n-button
+                      v-if="index === 0"
+                      size="small"
+                      text
+                      @click="showProjectManager = true"
+                      class="manage-btn"
+                    >
+                      管理项目
+                    </n-button>
+                  </div>
+                  <n-select
+                    v-model:value="item.project"
+                    placeholder="请选择或输入项目名称"
+                    :options="localProjectOptions"
+                    style="width: 100%"
+                    @update:value="val => handleUpdateValue(val, item)"
+                  />
+                </div>
+              </n-gi>
+
+              <n-gi>
+                <div class="work-item-field">
+                  <label class="field-label">模块名称</label>
+                  <n-input v-model:value="item.module" placeholder="请输入模块名称" style="width: 100%" />
+                </div>
+              </n-gi>
+
+              <n-gi>
+                <div class="work-item-field">
+                  <label class="field-label">工作类型</label>
+                  <n-select
+                    v-model:value="item.type"
+                    :options="workTypeOptions"
+                    placeholder="请选择工作类型"
+                    style="width: 100%"
+                  />
+                </div>
+              </n-gi>
+
+              <n-gi v-if="formData.items.length > 1" style="display: flex">
+                <div class="work-item-field action-field">
+                  <n-button type="error" @click="removeItem(index)" dashed>删除</n-button>
+                </div>
+              </n-gi>
+            </n-grid>
+
+            <div class="work-content-group">
+              <label class="field-label">工作内容</label>
+              <n-input
+                v-model:value="item.content"
+                type="textarea"
+                :rows="3"
+                placeholder="请输入工作内容"
+                style="width: 100%"
+              />
+            </div>
+          </div>
+
+          <n-button dashed type="primary" size="large" block @click="addItem" style="margin-top: 16px">
+            <template #icon>
+              <n-icon><AddAlt /></n-icon>
+            </template>
+            <span>新增工作项</span>
+          </n-button>
         </div>
 
-        <n-button dashed type="primary" size="large" block @click="addItem" style="margin-top: 16px">
-          + 新增工作项
-        </n-button>
-      </div>
-
-      <div class="form-footer">
-        <n-button @click="handleCancel">取消</n-button>
-        <n-button type="primary" @click="saveReport" :loading="loading"> 保存日报 </n-button>
-      </div>
-    </n-card>
+        <div class="form-footer">
+          <n-button @click="handleCancel" size="large">
+            <template #icon>
+              <n-icon><Reset /></n-icon>
+            </template>
+            <span>重置</span>
+          </n-button>
+          <n-button type="primary" @click="saveReport" :loading="loading" size="large" :icon="Save">
+            <template #icon>
+              <n-icon><Save /></n-icon>
+            </template>
+            <span>保存日报</span>
+          </n-button>
+        </div>
+      </n-card>
+    </n-spin>
 
     <ProjectManager
       :visible="showProjectManager"
@@ -96,22 +123,21 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, computed, watch } from 'vue';
+import { ref, reactive, onMounted, computed } from 'vue';
 import { useMessage } from 'naive-ui';
 import { saveReport as saveReportDB, getReport as getReportDB } from '../utils/db';
 import { projectOptions as defaultProjectOptions, workTypeOptions } from '../data/options';
 import dayjs from 'dayjs';
 import ProjectManager from './ProjectManager.vue';
-
-const message = useMessage();
-
 import { useRoute } from 'vue-router';
+import { Save, Reset, AddAlt } from '@vicons/carbon';
 
 const emit = defineEmits(['saved']);
-
+const message = useMessage();
 const route = useRoute();
-
+const showProjectManager = ref(false);
 const loading = ref(false);
+const showLoading = ref(false);
 const customProjects = ref([]);
 
 const localProjectOptions = computed(() => {
@@ -126,7 +152,7 @@ const localProjectOptions = computed(() => {
 
 const formData = reactive({
   date: route.query.date ? dayjs(route.query.date).valueOf() : dayjs().valueOf(),
-  items: [{ project: null, module: '', type: '', content: '' }],
+  items: [{ project: null, module: '', type: null, content: '' }],
 });
 
 const loadCustomProjects = () => {
@@ -140,11 +166,10 @@ const loadCustomProjects = () => {
   }
 };
 
+// 新增工作项
 const addItem = () => {
-  formData.items.push({ project: null, module: '', type: '', content: '' });
+  formData.items.push({ project: null, module: '', type: null, content: '' });
 };
-
-const showProjectManager = ref(false);
 
 const handleAddProject = projectName => {
   customProjects.value.push(projectName);
@@ -165,7 +190,20 @@ const removeItem = index => {
 };
 
 const handleCancel = () => {
-  formData.items = [{ project: null, module: '', type: '', content: '' }];
+  formData.items = [{ project: null, module: '', type: null, content: '' }];
+};
+
+const handleChangeDate = val => {
+  loadReport();
+};
+
+const handleUpdateValue = (val, item) => {
+  // 校验当前日期是否有相同项目名称
+  const existingProject = formData.items.find(item => item.project === val);
+  if (existingProject) {
+    message.error(`项目名称 ${val} 已存在`);
+    item.project = null;
+  }
 };
 
 const validateForm = () => {
@@ -189,6 +227,7 @@ const validateForm = () => {
       return false;
     }
   }
+
   return true;
 };
 
@@ -219,7 +258,20 @@ const saveReport = async () => {
 };
 
 const loadReport = async () => {
-  formData.items = [{ project: null, module: '', type: '', content: '' }];
+  showLoading.value = true;
+  try {
+    const currentDate = dayjs(formData.date).format('YYYY-MM-DD');
+    // 从数据库加载日报
+    const report = await getReportDB(currentDate);
+    if (report) {
+      formData.date = dayjs(report.date).valueOf();
+      formData.items = report.items;
+    } else {
+      formData.items = [{ project: null, module: '', type: null, content: '' }];
+    }
+  } finally {
+    setTimeout(() => (showLoading.value = false), 2 * 1000);
+  }
 };
 
 onMounted(() => {
@@ -256,6 +308,7 @@ onMounted(() => {
 
 .form-body {
   margin-bottom: 24px;
+  padding-bottom: 24px;
 }
 
 .form-group {
@@ -322,18 +375,24 @@ onMounted(() => {
 }
 
 .form-footer {
+  margin: -24px;
   display: flex;
-  justify-content: space-between;
+  gap: 12px;
+  justify-content: flex-end;
   align-items: center;
-  padding-top: 20px;
-  border-top: 1px solid #e2e8f0;
+  padding: 10px;
+  position: sticky;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background-color: #fff;
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.06);
 }
 
 .field-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 8px;
 }
 
 .manage-btn {

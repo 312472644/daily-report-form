@@ -2,7 +2,7 @@
   <n-config-provider :locale="zhCN" :date-locale="dateZhCN">
     <n-message-provider>
       <div class="app-container">
-        <header class="app-header">
+        <header class="app-header" :class="{ 'is-over-header': isOverHeader }">
           <div class="header-content">
             <div class="header-left-container">
               <div class="header-left">
@@ -12,7 +12,7 @@
                   height="24"
                   viewBox="0 0 24 24"
                   fill="none"
-                  stroke="#fff"
+                  stroke="#333"
                   stroke-width="2"
                   stroke-linecap="round"
                   stroke-linejoin="round"
@@ -30,7 +30,7 @@
                 <router-link class="nav-item" active-class="active" to="/list"> 报告列表 </router-link>
               </nav>
             </div>
-            <div class="header-right">
+            <!-- <div class="header-right">
               <button class="icon-btn">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -63,7 +63,7 @@
                   <circle cx="12" cy="7" r="4" />
                 </svg>
               </button>
-            </div>
+            </div> -->
           </div>
         </header>
 
@@ -78,9 +78,21 @@
 <script setup>
 import { NConfigProvider, zhCN, dateZhCN } from 'naive-ui';
 import { useRouter } from 'vue-router';
-import { watch } from 'vue';
+import { onBeforeUnmount, onMounted, watch, ref } from 'vue';
 
 const router = useRouter();
+const isOverHeader = ref(false);
+
+function handleScroll() {
+  isOverHeader.value = document.documentElement.scrollTop > 70;
+}
+
+function init() {
+  document.addEventListener('scroll', handleScroll);
+}
+
+onMounted(() => init());
+onBeforeUnmount(() => document.removeEventListener('scroll', handleScroll));
 
 watch(
   () => router.currentRoute.value.meta.title,
@@ -103,8 +115,16 @@ watch(
   align-items: center;
   padding: 0 40px;
   height: 60px;
-  background-color: #1a2634;
+  background-color: #fff;
   color: #fff;
+  position: sticky;
+  top: 0;
+  z-index: 999;
+  box-shadow: 0 0 4px 1px #dadde1;
+  &.is-over-header {
+    backdrop-filter: blur(10px);
+    background-color: rgba(255, 255, 255, 0.1);
+  }
 }
 
 .header-content {
@@ -133,7 +153,7 @@ watch(
 .header-left .logo-text {
   font-size: 20px;
   font-weight: 700;
-  color: #fff;
+  color: #333;
 }
 
 .header-nav {
@@ -145,7 +165,7 @@ watch(
 .nav-item {
   background: none;
   border: none;
-  color: #94a3b8;
+  color: #666;
   font-size: 14px;
   font-weight: 500;
   padding: 8px 16px;
@@ -156,7 +176,7 @@ watch(
 }
 
 .nav-item:hover {
-  color: #fff;
+  /* color: #fff; */
 }
 
 .nav-item.active {
@@ -167,21 +187,6 @@ watch(
 .header-right {
   display: flex;
   gap: 16px;
-}
-
-.icon-btn {
-  background: none;
-  border: none;
-  color: #94a3b8;
-  cursor: pointer;
-  padding: 8px;
-  border-radius: 8px;
-  transition: all 0.3s ease;
-}
-
-.icon-btn:hover {
-  color: #fff;
-  background-color: rgba(255, 255, 255, 0.1);
 }
 
 .app-content {

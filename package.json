@@ -16,6 +16,7 @@
     "vue-router": "^5.0.7"
   },
   "devDependencies": {
+    "@vicons/carbon": "^0.13.0",
     "@vitejs/plugin-vue": "^5.2.3",
     "vite": "^6.3.5"
   }

@@ -19,24 +19,30 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # CI 机器先执行一次 git clone 操作，确保本地有最新的代码
       - name: Checkout
         uses: actions/checkout@v4
 
+      #配置 GitHub Pages 部署环境
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
+      # 安装 Node.js 环境
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
 
+      # 安装项目依赖
       - name: Install Dependencies
         run: npm ci
 
+      # 构建项目
       - name: Build
         run: npm run build
 
+      # 上传构建产物到 GitHub Pages
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
