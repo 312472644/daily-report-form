@@ -448,5 +448,54 @@ onMounted(() => {
       color: #d03050;
     }
   }
+
+  @media screen and (max-width: 768px) {
+    .form-header {
+      margin-bottom: 16px;
+    }
+
+    .form-title {
+      font-size: 18px;
+    }
+
+    .form-subtitle {
+      font-size: 12px;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-label {
+      font-size: 13px;
+    }
+
+    .work-item-card {
+      padding: 12px;
+      margin-bottom: 12px;
+    }
+
+    .work-item-field {
+      margin-bottom: 12px;
+    }
+
+    .field-header {
+      gap: 8px;
+    }
+
+    .field-label {
+      font-size: 12px;
+    }
+
+    .manage-btn {
+      font-size: 11px;
+      padding: 4px 8px;
+    }
+
+    .actions {
+      flex-direction: column;
+      gap: 10px;
+    }
+  }
 }
 </style>

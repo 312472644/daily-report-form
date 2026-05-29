@@ -1,10 +1,11 @@
 <template>
   <n-modal
+    :class="{ 'mobile-modal': isMobile }"
     :show="visible"
     :title="`工作${report?.date}日报`"
     preset="card"
     content-scrollable
-    style="width: 60%; max-height: 80vh"
+    :style="{ width: isMobile ? '95%' : '60%', maxHeight: '80vh' }"
     :segmented="{ content: true }"
     @update:show="handleModalClose"
   >
@@ -49,6 +50,9 @@
 
 <script setup>
 import { useMessage, NTag } from 'naive-ui';
+import useMobile from '@/hooks/useMobile.js';
+
+const isMobile = useMobile();
 
 const props = defineProps({
   visible: {
@@ -86,7 +90,7 @@ const getItemContent = item => {
 };
 </script>
 
-<style scoped>
+<style lang="scss">
 .detail-modal-content {
   background: #fff;
   border-radius: 12px;
@@ -155,5 +159,14 @@ const getItemContent = item => {
 
 .copy-btn:hover {
   color: #3b82f6;
+}
+
+.mobile-modal {
+  .n-card-header {
+    padding: 12px;
+  }
+  .n-card-content {
+    padding: 12px !important;
+  }
 }
 </style>

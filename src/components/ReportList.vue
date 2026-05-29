@@ -83,7 +83,7 @@
 
     <div class="search-card">
       <n-form :model="searchForm" label-placement="top">
-        <n-grid :cols="5" :x-gap="16" :y-gap="16">
+        <n-grid cols="5 xs:1 m:5 l:5" :x-gap="16" :y-gap="16" responsive="screen">
           <n-gi>
             <n-form-item label="日期范围">
               <n-date-picker
@@ -191,7 +191,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted, onUnmounted, h } from 'vue';
+import { ref, reactive, computed, onMounted, onUnmounted, h, nextTick } from 'vue';
 import { useMessage, useDialog } from 'naive-ui';
 import { useRouter } from 'vue-router';
 import { getAllReports, deleteReport as deleteReportDB } from '../utils/db';
@@ -235,7 +235,7 @@ const columns = [
   {
     title: '填报日期',
     key: 'date',
-    width: 120,
+    minWidth: 120,
     align: 'center',
     render: row => {
       const reportDate = dayjs(row.date);
@@ -249,18 +249,21 @@ const columns = [
   {
     title: '项目名称',
     key: 'projects',
+    minWidth: 200,
     align: 'center',
     render: row => getProjectSummary(row),
   },
   {
     title: '工作类型',
     key: 'type',
+    minWidth: 120,
+    align: 'center',
     render: row => getType(row),
   },
   {
     title: '工作项数量',
     key: 'count',
-    width: 150,
+    minWidth: 150,
     align: 'center',
     render: row => row.items.length,
   },
@@ -268,7 +271,7 @@ const columns = [
     title: '是否为工作日',
     key: 'isWorkDay',
     align: 'center',
-    width: 140,
+    minWidth: 120,
     render: row =>
       dayjs(row.date).day() !== 0 && dayjs(row.date).day() !== 6
         ? h(NTag, { type: 'success' }, () => '是')
@@ -277,10 +280,11 @@ const columns = [
   {
     title: '操作',
     key: 'actions',
-    width: 140,
+    minWidth: 140,
     align: 'center',
+    fixed: 'right',
     render: row =>
-      h('div', { class: 'actions' }, [
+      h('div', { class: 'actions', style: { display: 'flex', justifyContent: 'center' } }, [
         h(
           NButton,
           {
@@ -464,11 +468,12 @@ const calculateTableHeight = () => {
   const containerTop = rect.top;
   const containerBottomMargin = 120;
   const calculatedHeight = viewportHeight - containerTop - containerBottomMargin;
-  tableMaxHeight.value = calculatedHeight;
+  tableMaxHeight.value = Math.max(300, calculatedHeight);
 };
 
 onMounted(async () => {
   await loadReports();
+  await nextTick();
   calculateTableHeight();
   window.addEventListener('resize', calculateTableHeight);
 });
@@ -485,6 +490,7 @@ defineExpose({
 <style lang="scss">
 .report-list {
   width: 100%;
+  padding-bottom: 12px;
   .page-header {
     margin-bottom: 24px;
   }
@@ -606,6 +612,8 @@ defineExpose({
   .actions {
     display: flex;
     gap: 12px;
+    justify-content: center;
+    min-width: 140px;
   }
 
   .action-btn {
@@ -626,6 +634,68 @@ defineExpose({
     align-items: center;
     gap: 12px;
     color: #999;
+  }
+
+  @media screen and (max-width: 768px) {
+    .page-header {
+      margin-bottom: 16px;
+    }
+
+    .page-title {
+      font-size: 18px;
+    }
+
+    .page-subtitle {
+      font-size: 12px;
+    }
+
+    .stats-cards {
+      grid-template-columns: 1fr;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .stat-card {
+      padding: 16px;
+      gap: 12px;
+    }
+
+    .stat-icon {
+      width: 40px;
+      height: 40px;
+    }
+
+    .stat-label {
+      font-size: 12px;
+    }
+
+    .stat-value {
+      font-size: 20px;
+    }
+
+    .search-form {
+      padding: 12px;
+    }
+
+    .form-row {
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .table-container {
+      padding: 12px;
+      overflow-x: auto;
+    }
+
+    .future-badge {
+      width: 20px;
+      height: 20px;
+      font-size: 10px;
+    }
+
+    .actions {
+      gap: 8px;
+    }
   }
 }
 </style>

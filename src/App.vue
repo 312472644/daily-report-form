@@ -91,7 +91,7 @@ watch(
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 0 40px;
+  padding: 0 20px;
   height: 60px;
   background-color: #fff;
   color: #fff;
@@ -102,6 +102,13 @@ watch(
   &.is-over-header {
     backdrop-filter: blur(10px);
     background-color: rgba(255, 255, 255, 0.4);
+  }
+}
+
+@media screen and (max-width: 768px) {
+  .app-header {
+    padding: 0 12px;
+    height: 50px;
   }
 }
 
@@ -134,6 +141,17 @@ watch(
   color: #333;
 }
 
+@media screen and (max-width: 768px) {
+  .header-left .logo-text {
+    font-size: 16px;
+  }
+
+  .logo-icon svg {
+    width: 24px;
+    height: 24px;
+  }
+}
+
 .header-nav {
   display: flex;
   gap: 20px;
@@ -151,6 +169,18 @@ watch(
   cursor: pointer;
   transition: all 0.3s ease;
   text-decoration: none;
+}
+
+@media screen and (max-width: 768px) {
+  .nav-item {
+    font-size: 13px;
+    padding: 6px 12px;
+  }
+
+  .header-nav {
+    gap: 8px;
+    margin-left: 12px;
+  }
 }
 
 .nav-item:hover {
@@ -173,6 +203,14 @@ watch(
   margin: 0 auto;
   min-height: calc(100% - 60px);
   height: calc(100% - 60px);
+}
+
+@media screen and (max-width: 768px) {
+  .app-content {
+    padding: 16px 12px;
+    min-height: calc(100% - 50px);
+    height: calc(100% - 50px);
+  }
 }
 
 .n-config-provider {
