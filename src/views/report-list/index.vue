@@ -194,16 +194,15 @@
 import { ref, reactive, computed, onMounted, onUnmounted, h, nextTick } from 'vue';
 import { useMessage, useDialog } from 'naive-ui';
 import { useRouter } from 'vue-router';
-import { getAllReports, deleteReport as deleteReportDB } from '../utils/db';
-import { exportToMarkdown, exportToCSV } from '../utils/export';
-import DetailModal from './DetailModal.vue';
-import ExportModal from './ExportModal.vue';
-import { projectOptions, workTypeOptions } from '../data/options';
 import dayjs from 'dayjs';
 import { NButton, NTag } from 'naive-ui';
 import { Search, Reset } from '@vicons/carbon';
-import { workTypeTagMap } from '../data/options';
 import EmptySvg from '@/assets/images/empty.svg';
+import { exportToMarkdown, exportToCSV } from '@/utils/export';
+import { getAllReports, deleteReport as deleteReportDB } from '@/utils/db';
+import DetailModal from './DetailModal.vue';
+import ExportModal from './ExportModal.vue';
+import { projectOptions, workTypeTagMap, workTypeOptions } from '@/data/options';
 
 const message = useMessage();
 const router = useRouter();
@@ -345,16 +344,19 @@ const filteredReports = computed(() => {
   showLoading.value = true;
   let result = [...reports.value].filter(r => r && r.items && Array.isArray(r.items));
 
+  // 日期范围
   if (searchForm.dateRange && Array.isArray(searchForm.dateRange) && searchForm.dateRange.length === 2) {
     const startDate = dayjs(searchForm.dateRange[0]).format('YYYY-MM-DD');
     const endDate = dayjs(searchForm.dateRange[1]).format('YYYY-MM-DD');
     result = result.filter(r => r.date >= startDate && r.date <= endDate);
   }
 
+  // 项目名称
   if (searchForm.project) {
     result = result.filter(r => r.items.some(item => item.project === searchForm.project));
   }
 
+  // 工作类型
   if (searchForm.workType) {
     result = result.filter(r => r.items.some(item => item.type === searchForm.workType));
   }
@@ -382,15 +384,12 @@ const getType = record => {
     'div',
     { class: 'type' },
     Array.from(new Set(record.items.map(item => item.type))).map(type =>
-      h(NTag, { class: 'type-tag-item', type: workTypeTagMap[type].tagType }, () => type),
+      h(NTag, { class: 'type-tag-item', type: workTypeTagMap[type]?.tagType || 'default' }, () => type),
     ),
   );
 };
 
-const getProjectSummary = record => {
-  const projects = [...new Set(record.items.map(item => item.project))];
-  return projects.join('，');
-};
+const getProjectSummary = record => [...new Set(record.items.map(item => item.project))].join('，');
 
 const reset = () => {
   searchForm.dateRange = null;

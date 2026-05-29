@@ -24,7 +24,7 @@
           </div>
 
           <div v-for="(item, index) in formData.items" :key="index" class="work-item-card">
-            <n-grid cols="4 xs:1 m:3 l:3" :x-gap="16" responsive="screen">
+            <n-grid cols="4 xs:1 m:4 l:4" :x-gap="16" responsive="screen">
               <n-gi>
                 <div class="work-item-field">
                   <div class="field-header">
@@ -130,8 +130,8 @@
 <script setup>
 import { ref, reactive, onMounted, computed } from 'vue';
 import { useMessage, useDialog } from 'naive-ui';
-import { saveReport as saveReportDB, getReport as getReportDB } from '../utils/db';
-import { projectOptions as defaultProjectOptions, workTypeOptions } from '../data/options';
+import { saveReport as saveReportDB, getReport as getReportDB } from '@/utils/db';
+import { projectOptions as defaultProjectOptions, workTypeOptions } from '@/data/options';
 import dayjs from 'dayjs';
 import ProjectManager from './ProjectManager.vue';
 import { useRoute } from 'vue-router';

@@ -1,6 +1,4 @@
 import { createRouter, createWebHashHistory } from 'vue-router';
-import DailyReportForm from '../components/DailyReportForm.vue';
-import ReportList from '../components/ReportList.vue';
 import NotFound from '../components/NotFound.vue';
 
 export const routes = [
@@ -13,19 +11,19 @@ export const routes = [
     path: '/form',
     name: 'DailyReportForm',
     meta: { title: '日报填写' },
-    component: DailyReportForm,
+    component: () => import('@/views/daily-report-form/index.vue'),
   },
   {
     path: '/list',
     name: 'ReportList',
     meta: { title: '日报记录' },
-    component: ReportList,
+    component: () => import('@/views/report-list/index.vue'),
   },
   {
     path: '/:pathMatch(.*)*',
     name: 'NotFound',
     meta: { hidden: true },
-    component: NotFound,
+    component: () => import('@/components/NotFound.vue'),
   },
 ];
 

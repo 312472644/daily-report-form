@@ -9,8 +9,9 @@ export const projectOptions = [
 export const workTypeOptions = [
   { value: '功能开发', label: '功能开发' },
   { value: 'Bug修复', label: 'Bug修复' },
-  { value: '需求分析', label: '需求分析' },
-  { value: '文档编写', label: '文档编写' },
+  { value: '重构代码', label: '重构代码' },
+  { value: '性能优化', label: '性能优化' },
+  { value: '文档更新', label: '文档更新' },
   { value: '其他', label: '其他' },
 ];
 
@@ -21,11 +22,14 @@ export const workTypeTagMap = {
   Bug修复: {
     tagType: 'error',
   },
-  需求分析: {
-    tagType: 'success',
+  重构代码: {
+    tagType: 'primary',
   },
-  文档编写: {
+  性能优化: {
     tagType: 'default',
+  },
+  文档更新: {
+    tagType: 'success',
   },
   其他: {
     tagType: 'warning',

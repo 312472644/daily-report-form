@@ -1,6 +1,10 @@
 import { ref, onMounted, onUnmounted } from 'vue';
 import { isMobile as checkIsMobile } from '@/utils/index.js';
 
+/**
+ * 检查是否为移动端
+ * @returns {boolean} 是否为移动端
+ */
 export default function useMobile() {
   const isMobile = ref(false);
 
