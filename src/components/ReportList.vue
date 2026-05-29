@@ -165,15 +165,23 @@
         <span class="record-count">共 {{ filteredReports.length }} 条记录</span>
       </div>
 
-      <div class="table-container">
-        <n-data-table
-          :loading="showLoading"
-          max-height="100%"
-          :columns="columns"
-          :data="filteredReports"
-          :row-key="row => row.date"
-          :empty-content="emptyContent"
-        />
+      <div ref="tableContainerRef" class="table-container">
+        <n-spin :show="showLoading">
+          <n-data-table
+            bottom-bordered
+            :columns="columns"
+            :max-height="tableMaxHeight + 'px'"
+            :data="filteredReports"
+            :row-key="row => row.date"
+          >
+            <template #empty>
+              <div class="empty-content">
+                <img :src="EmptySvg" alt="暂无数据" />
+                <span>暂无数据</span>
+              </div>
+            </template>
+          </n-data-table>
+        </n-spin>
       </div>
     </div>
 
@@ -183,7 +191,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted, h } from 'vue';
+import { ref, reactive, computed, onMounted, onUnmounted, h } from 'vue';
 import { useMessage, useDialog } from 'naive-ui';
 import { useRouter } from 'vue-router';
 import { getAllReports, deleteReport as deleteReportDB } from '../utils/db';
@@ -195,11 +203,14 @@ import dayjs from 'dayjs';
 import { NButton, NTag } from 'naive-ui';
 import { Search, Reset } from '@vicons/carbon';
 import { workTypeTagMap } from '../data/options';
+import EmptySvg from '@/assets/images/empty.svg';
 
 const message = useMessage();
 const router = useRouter();
 const dialog = useDialog();
 const showLoading = ref(false);
+const tableContainerRef = ref(null);
+const tableMaxHeight = ref(0);
 
 const reports = ref([]);
 const showDetailModal = ref(false);
@@ -214,7 +225,7 @@ const searchForm = reactive({
 });
 
 const columns = [
-  { title: '序号', key: 'index', width: 60, align: 'center', render: (row, index) => index + 1 },
+  { title: '序号', key: 'index', width: 60, align: 'center', render: (_, index) => index + 1 },
   { title: '日期', key: 'date', width: 120, align: 'center' },
   {
     title: '工作项数量',
@@ -272,8 +283,6 @@ const columns = [
       ]),
   },
 ];
-
-const emptyContent = () => h('div', { class: 'empty' }, '暂无日报数据');
 
 const currentMonthDays = computed(() => {
   const currentMonth = dayjs().month();
@@ -390,12 +399,7 @@ const deleteReport = async record => {
 const handleExport = formData => {
   let exportReports = [...filteredReports.value];
 
-  if (
-    formData.range === 'selected' &&
-    formData.dateRange &&
-    Array.isArray(formData.dateRange) &&
-    formData.dateRange.length === 2
-  ) {
+  if (formData.range === 'selected' && Array.isArray(formData.dateRange)) {
     const startDate = dayjs(formData.dateRange[0]).format('YYYY-MM-DD');
     const endDate = dayjs(formData.dateRange[1]).format('YYYY-MM-DD');
     exportReports = exportReports.filter(r => r.date >= startDate && r.date <= endDate);
@@ -420,8 +424,27 @@ const loadReports = async () => {
   reports.value = await getAllReports();
 };
 
-onMounted(() => {
-  loadReports();
+const calculateTableHeight = () => {
+  if (!tableContainerRef.value) {
+    return;
+  }
+  const container = tableContainerRef.value;
+  const rect = container.getBoundingClientRect();
+  const viewportHeight = window.innerHeight;
+  const containerTop = rect.top;
+  const containerBottomMargin = 120;
+  const calculatedHeight = viewportHeight - containerTop - containerBottomMargin;
+  tableMaxHeight.value = calculatedHeight;
+};
+
+onMounted(async () => {
+  await loadReports();
+  calculateTableHeight();
+  window.addEventListener('resize', calculateTableHeight);
+});
+
+onUnmounted(() => {
+  window.removeEventListener('resize', calculateTableHeight);
 });
 
 defineExpose({
@@ -431,10 +454,7 @@ defineExpose({
 
 <style lang="scss">
 .report-list {
-  display: flex;
-  flex-direction: column;
   width: 100%;
-  height: 100%;
   .page-header {
     margin-bottom: 24px;
   }
@@ -533,11 +553,7 @@ defineExpose({
     background: #fff;
     border-radius: 12px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-    // overflow: hidden;
-    flex: 1 0 0;
-    min-height: 0;
-    display: flex;
-    flex-direction: column;
+    overflow: hidden;
   }
 
   .list-header {
@@ -555,16 +571,6 @@ defineExpose({
 
   .table-container {
     padding: 20px;
-    flex: 1 0 0;
-    min-height: 0;
-    .n-data-table {
-      height: 100%;
-      .n-data-table-base-table {
-        height: 100%;
-        display: flex;
-        flex-direction: column;
-      }
-    }
   }
 
   .actions {
@@ -579,18 +585,17 @@ defineExpose({
     cursor: pointer;
     padding: 4px 0;
     transition: color 0.3s ease;
-  }
-
-  .action-btn {
     & + .action-btn {
-      margin-left: 8px;
+      margin-left: 4px;
     }
   }
 
-  .empty {
-    text-align: center;
-    padding: 40px;
-    color: #94a3b8;
+  .empty-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    color: #999;
   }
 }
 </style>
