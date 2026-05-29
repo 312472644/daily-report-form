@@ -225,8 +225,27 @@ const searchForm = reactive({
 });
 
 const columns = [
-  { title: '序号', key: 'index', width: 60, align: 'center', render: (_, index) => index + 1 },
-  { title: '日期', key: 'date', width: 120, align: 'center' },
+  {
+    title: '序号',
+    key: 'index',
+    width: 60,
+    align: 'center',
+    render: (_, index) => index + 1,
+  },
+  {
+    title: '填报日期',
+    key: 'date',
+    width: 120,
+    align: 'center',
+    render: row => {
+      const reportDate = dayjs(row.date);
+      const today = dayjs().startOf('day');
+      const isFuture = reportDate.isAfter(today) || reportDate.isSame(today);
+      return h('div', { class: isFuture ? 'is-future' : '' }, [
+        isFuture ? h(NTag, { type: 'success' }, () => row.date) : h('span', {}, row.date),
+      ]);
+    },
+  },
   {
     title: '工作项数量',
     key: 'count',
