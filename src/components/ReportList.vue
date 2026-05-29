@@ -247,11 +247,10 @@ const columns = [
     },
   },
   {
-    title: '工作项数量',
-    key: 'count',
-    width: 120,
+    title: '项目名称',
+    key: 'projects',
     align: 'center',
-    render: row => row.items.length,
+    render: row => getProjectSummary(row),
   },
   {
     title: '工作类型',
@@ -259,9 +258,21 @@ const columns = [
     render: row => getType(row),
   },
   {
-    title: '项目名称',
-    key: 'projects',
-    render: row => getProjectSummary(row),
+    title: '工作项数量',
+    key: 'count',
+    width: 150,
+    align: 'center',
+    render: row => row.items.length,
+  },
+  {
+    title: '是否为工作日',
+    key: 'isWorkDay',
+    align: 'center',
+    width: 140,
+    render: row =>
+      dayjs(row.date).day() !== 0 && dayjs(row.date).day() !== 6
+        ? h(NTag, { type: 'success' }, () => '是')
+        : h(NTag, { type: 'error' }, () => '否'),
   },
   {
     title: '操作',

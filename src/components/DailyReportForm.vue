@@ -24,7 +24,7 @@
           </div>
 
           <div v-for="(item, index) in formData.items" :key="index" class="work-item-card">
-            <n-grid :cols="4" :x-gap="16">
+            <n-grid cols="4 xs:1 m:3 l:3" :x-gap="16" responsive="screen">
               <n-gi>
                 <div class="work-item-field">
                   <div class="field-header">
@@ -129,7 +129,7 @@
 
 <script setup>
 import { ref, reactive, onMounted, computed } from 'vue';
-import { useMessage } from 'naive-ui';
+import { useMessage, useDialog } from 'naive-ui';
 import { saveReport as saveReportDB, getReport as getReportDB } from '../utils/db';
 import { projectOptions as defaultProjectOptions, workTypeOptions } from '../data/options';
 import dayjs from 'dayjs';
@@ -139,6 +139,7 @@ import { Save, Reset, AddAlt } from '@vicons/carbon';
 
 const emit = defineEmits(['saved']);
 const message = useMessage();
+const dialog = useDialog();
 const route = useRoute();
 const showProjectManager = ref(false);
 const loading = ref(false);
@@ -239,9 +240,37 @@ const validateForm = () => {
   return true;
 };
 
-const saveReport = async () => {
-  if (!validateForm()) return;
+const isValidSubmit = async () => {
+  if (!validateForm()) return false;
 
+  const date = dayjs(formData.date);
+  const dayOfWeek = date.day();
+
+  if (dayOfWeek === 0 || dayOfWeek === 6) {
+    const isConfirmed = await new Promise(resolve => {
+      dialog.info({
+        title: '确认保存',
+        content: `您选择的日期 【${date.format('YYYY年MM月DD日')}】 是${dayOfWeek === 0 ? '周日' : '周六'}，确定要保存吗？`,
+        negativeButtonProps: {
+          type: 'info',
+        },
+        positiveText: '确定',
+        negativeText: '取消',
+        onPositiveClick: () => resolve(true),
+        onNegativeClick: () => resolve(false),
+      });
+    });
+
+    if (!isConfirmed) {
+      return false;
+    }
+  }
+
+  return true;
+};
+
+const saveReport = async () => {
+  if (!(await isValidSubmit())) return;
   loading.value = true;
 
   try {
@@ -259,6 +288,7 @@ const saveReport = async () => {
     message.success('日报保存成功');
     emit('saved');
   } catch (error) {
+    console.error('保存日报失败:', error);
     message.error('保存失败，请重试');
   } finally {
     loading.value = false;
@@ -393,6 +423,7 @@ onMounted(() => {
     right: 0;
     background-color: #fff;
     box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.06);
+    z-index: 100;
   }
 
   .field-header {
