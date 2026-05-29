@@ -5,7 +5,7 @@ import path from 'path';
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
   return {
-    base: mode === 'development' ? '/' : '/Daily-Report-Form/',
+    base: mode === 'development' ? '/' : '/daily-report-form/',
     plugins: [vue()],
     server: {
       port: 9000,
