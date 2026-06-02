@@ -168,7 +168,7 @@
       <div ref="tableContainerRef" class="table-container">
         <n-spin :show="showLoading">
           <n-data-table
-            bottom-bordered
+            :bordered="true"
             :columns="columns"
             :max-height="tableMaxHeight + 'px'"
             :data="filteredReports"
@@ -187,6 +187,12 @@
 
     <DetailModal :visible="showDetailModal" :report="selectedReport" @close="showDetailModal = false" />
     <ExportModal :visible="showExportModal" @cancel="showExportModal = false" @export="handleExport" />
+    <ChangeDateModal
+      :visible="showChangeDateModal"
+      :report="reportToChangeDate"
+      @update:visible="showChangeDateModal = $event"
+      @confirm="handleChangeDate"
+    />
   </div>
 </template>
 
@@ -195,13 +201,14 @@ import { ref, reactive, computed, onMounted, onUnmounted, h, nextTick } from 'vu
 import { useMessage, useDialog } from 'naive-ui';
 import { useRouter } from 'vue-router';
 import dayjs from 'dayjs';
-import { NButton, NTag } from 'naive-ui';
-import { Search, Reset } from '@vicons/carbon';
+import { NButton, NTag, NDropdown, NIcon } from 'naive-ui';
+import { Search, Reset, Edit, Delete, Calendar } from '@vicons/carbon';
 import EmptySvg from '@/assets/images/empty.svg';
 import { exportToMarkdown, exportToCSV } from '@/utils/export';
-import { getAllReports, deleteReport as deleteReportDB } from '@/utils/db';
+import { getAllReports, deleteReport as deleteReportDB, saveReport as saveReportDB } from '@/utils/db';
 import DetailModal from './DetailModal.vue';
 import ExportModal from './ExportModal.vue';
+import ChangeDateModal from './ChangeDateModal.vue';
 import { projectOptions, workTypeTagMap, workTypeOptions } from '@/data/options';
 
 const message = useMessage();
@@ -214,7 +221,9 @@ const tableMaxHeight = ref(0);
 const reports = ref([]);
 const showDetailModal = ref(false);
 const showExportModal = ref(false);
+const showChangeDateModal = ref(false);
 const selectedReport = ref(null);
+const reportToChangeDate = ref(null);
 
 const searchForm = reactive({
   dateRange: null,
@@ -279,41 +288,58 @@ const columns = [
   {
     title: '操作',
     key: 'actions',
-    minWidth: 140,
+    width: 80,
+    className: 'right-fixed-column',
     align: 'center',
     fixed: 'right',
     render: row =>
-      h('div', { class: 'actions', style: { display: 'flex', justifyContent: 'center' } }, [
-        h(
-          NButton,
-          {
-            class: 'action-btn',
-            text: true,
-            onClick: () => viewDetail(row),
+      h(
+        NDropdown,
+        {
+          trigger: 'hover',
+          onSelect: key => {
+            if (key === 'view') {
+              viewDetail(row);
+            } else if (key === 'edit') {
+              editReport(row);
+            } else if (key === 'changeDate') {
+              changeDateReport(row);
+            } else if (key === 'delete') {
+              deleteReport(row);
+            }
           },
-          () => '查看',
-        ),
-        h(
-          NButton,
-          {
-            class: 'action-btn',
-            text: true,
-            type: 'info',
-            onClick: () => editReport(row),
-          },
-          () => '编辑',
-        ),
-        h(
-          NButton,
-          {
-            class: 'action-btn',
-            text: true,
-            type: 'error',
-            onClick: () => deleteReport(row),
-          },
-          () => '删除',
-        ),
-      ]),
+          options: [
+            {
+              label: '查看日报',
+              key: 'view',
+              props: { class: 'view-icon' },
+              icon: () => h(NIcon, null, { default: () => h(Search) }),
+            },
+            {
+              label: '编辑日报',
+              key: 'edit',
+              props: { class: 'edit-icon' },
+              icon: () => h(NIcon, null, { default: () => h(Edit) }),
+            },
+            {
+              label: '修改日期',
+              key: 'changeDate',
+              props: { class: 'change-date-icon' },
+              icon: () => h(NIcon, null, { default: () => h(Calendar) }),
+            },
+            {
+              label: '删除日报',
+              key: 'delete',
+              props: { class: 'delete-icon' },
+              status: 'error',
+              icon: () => h(NIcon, null, { default: () => h(Delete) }),
+            },
+          ],
+        },
+        {
+          default: () => h(NButton, { text: true, type: 'primary' }, () => '更多'),
+        },
+      ),
   },
 ];
 
@@ -427,6 +453,45 @@ const deleteReport = async record => {
       }
     },
   });
+};
+
+const changeDateReport = record => {
+  reportToChangeDate.value = record;
+  showChangeDateModal.value = true;
+};
+
+const handleChangeDate = async newDateStr => {
+  if (!reportToChangeDate.value || !newDateStr) return;
+
+  try {
+    const oldDate = reportToChangeDate.value.date;
+
+    if (oldDate === newDateStr) {
+      message.info('日期未发生变化');
+      showChangeDateModal.value = false;
+      return;
+    }
+
+    const existingReport = reports.value.find(r => r.date === newDateStr);
+    if (existingReport) {
+      message.error(`${newDateStr} 的日报已存在`);
+      return;
+    }
+
+    await deleteReportDB(oldDate);
+
+    const updatedReport = JSON.parse(JSON.stringify(reportToChangeDate.value));
+    updatedReport.date = newDateStr;
+
+    await saveReportDB(updatedReport);
+
+    await loadReports();
+    message.success('日期修改成功');
+    showChangeDateModal.value = false;
+  } catch (error) {
+    console.log('err', error);
+    message.error('日期修改失败');
+  }
 };
 
 const handleExport = formData => {
@@ -694,6 +759,20 @@ defineExpose({
 
     .actions {
       gap: 8px;
+    }
+  }
+
+  .right-fixed-column {
+    &::before {
+      pointer-events: none;
+      content: '';
+      width: 36px;
+      display: inline-block;
+      position: absolute;
+      top: 0;
+      bottom: -1px;
+      left: -36px;
+      box-shadow: inset -12px 0 8px -12px rgba(0, 0, 0, 0.1);
     }
   }
 }
