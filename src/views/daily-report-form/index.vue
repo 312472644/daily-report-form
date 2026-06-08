@@ -134,13 +134,14 @@ import { saveReport as saveReportDB, getReport as getReportDB } from '@/utils/db
 import { projectOptions as defaultProjectOptions, workTypeOptions } from '@/data/options';
 import dayjs from 'dayjs';
 import ProjectManager from './ProjectManager.vue';
-import { useRoute } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 import { Save, Reset, AddAlt } from '@vicons/carbon';
 
-const emit = defineEmits(['saved']);
+const router = useRouter();
+const route = useRoute();
 const message = useMessage();
 const dialog = useDialog();
-const route = useRoute();
+
 const showProjectManager = ref(false);
 const loading = ref(false);
 const showLoading = ref(false);
@@ -160,6 +161,9 @@ const formData = reactive({
   date: route.query.date ? dayjs(route.query.date).valueOf() : dayjs().valueOf(),
   items: [{ project: null, module: '', type: null, content: '' }],
 });
+
+// 存储原始数据用于比较
+let originalReport = null;
 
 const loadCustomProjects = () => {
   try {
@@ -270,6 +274,12 @@ const isValidSubmit = async () => {
 };
 
 const saveReport = async () => {
+  // 检查内容是否发生变化
+  if (!hasChanges()) {
+    message.info('日报内容未发生变化，无需保存');
+    return;
+  }
+
   if (!(await isValidSubmit())) return;
   loading.value = true;
 
@@ -286,7 +296,8 @@ const saveReport = async () => {
 
     await saveReportDB(report);
     message.success('日报保存成功');
-    emit('saved');
+    // 保存成功后跳转到列表页
+    router.push('/list');
   } catch (error) {
     console.error('保存日报失败:', error);
     message.error('保存失败，请重试');
@@ -301,15 +312,64 @@ const loadReport = async () => {
     const currentDate = dayjs(formData.date).format('YYYY-MM-DD');
     // 从数据库加载日报
     const report = await getReportDB(currentDate);
+    // 保存原始数据用于比较
+    originalReport = report ? JSON.parse(JSON.stringify(report)) : null;
     if (report) {
       formData.date = dayjs(report.date).valueOf();
-      formData.items = report.items;
+      formData.items = JSON.parse(JSON.stringify(report.items));
     } else {
       formData.items = [{ project: null, module: '', type: null, content: '' }];
     }
   } finally {
     setTimeout(() => (showLoading.value = false), 1 * 1000);
   }
+};
+
+// 检查内容是否发生变化
+const hasChanges = () => {
+  const currentReport = {
+    date: dayjs(formData.date).format('YYYY-MM-DD'),
+    items: formData.items.map(item => ({
+      project: item.project,
+      module: item.module,
+      type: item.type,
+      content: item.content,
+    })),
+  };
+
+  if (!originalReport) {
+    // 如果没有原始数据，检查是否有填写内容
+    return currentReport.items.some(item => item.project || item.type || item.content.trim());
+  }
+
+  // 比较日期
+  if (currentReport.date !== originalReport.date) {
+    return true;
+  }
+
+  // 比较项目数量
+  if (currentReport.items.length !== originalReport.items.length) {
+    return true;
+  }
+
+  // 逐个比较项目
+  for (let i = 0; i < currentReport.items.length; i++) {
+    const current = currentReport.items[i];
+    const original = originalReport.items[i];
+
+    if (!original) return true;
+
+    if (
+      current.project !== original.project ||
+      current.module !== original.module ||
+      current.type !== original.type ||
+      current.content !== original.content
+    ) {
+      return true;
+    }
+  }
+
+  return false;
 };
 
 onMounted(() => {
