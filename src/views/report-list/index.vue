@@ -142,26 +142,48 @@
 
     <div class="list-container">
       <div class="list-header">
-        <n-button type="primary" @click="showExportModal = true">
-          <template #icon>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-              <polyline points="7 10 12 15 17 10" />
-              <line x1="12" y1="15" x2="12" y2="3" />
-            </svg>
-          </template>
-          导出日报
-        </n-button>
+        <div class="action-buttons">
+          <n-button @click="showImportModal = true">
+            <template #icon>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="17 8 12 3 7 8" />
+                <line x1="12" y1="3" x2="12" y2="15" />
+              </svg>
+            </template>
+            导入日报
+          </n-button>
+          <n-button type="primary" @click="showExportModal = true">
+            <template #icon>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="7 10 12 15 17 10" />
+                <line x1="12" y1="15" x2="12" y2="3" />
+              </svg>
+            </template>
+            导出日报
+          </n-button>
+        </div>
         <span class="record-count">共 {{ filteredReports.length }} 条记录</span>
       </div>
 
@@ -187,6 +209,7 @@
 
     <DetailModal :visible="showDetailModal" :report="selectedReport" @close="showDetailModal = false" />
     <ExportModal :visible="showExportModal" @cancel="showExportModal = false" @export="handleExport" />
+    <ImportModal :visible="showImportModal" @cancel="showImportModal = false" @import="handleImport" />
     <ChangeDateModal
       :visible="showChangeDateModal"
       :report="reportToChangeDate"
@@ -208,6 +231,7 @@ import { exportToMarkdown, exportToCSV } from '@/utils/export';
 import { getAllReports, deleteReport as deleteReportDB, saveReport as saveReportDB } from '@/utils/db';
 import DetailModal from './DetailModal.vue';
 import ExportModal from './ExportModal.vue';
+import ImportModal from './ImportModal.vue';
 import ChangeDateModal from './ChangeDateModal.vue';
 import { projectOptions, workTypeTagMap, workTypeOptions } from '@/data/options';
 
@@ -221,6 +245,7 @@ const tableMaxHeight = ref(0);
 const reports = ref([]);
 const showDetailModal = ref(false);
 const showExportModal = ref(false);
+const showImportModal = ref(false);
 const showChangeDateModal = ref(false);
 const selectedReport = ref(null);
 const reportToChangeDate = ref(null);
@@ -494,6 +519,44 @@ const handleChangeDate = async newDateStr => {
   }
 };
 
+const handleImport = async importedReports => {
+  if (!importedReports || importedReports.length === 0) {
+    message.error('没有可导入的数据');
+    return;
+  }
+
+  try {
+    let successCount = 0;
+    let skipCount = 0;
+
+    for (const report of importedReports) {
+      const existingReport = reports.value.find(r => r.date === report.date);
+      if (existingReport) {
+        skipCount++;
+        continue;
+      }
+
+      const reportData = JSON.parse(JSON.stringify(report));
+      await saveReportDB(reportData);
+      successCount++;
+    }
+
+    await loadReports();
+
+    if (successCount > 0) {
+      message.success(`成功导入 ${successCount} 条日报`);
+    }
+    if (skipCount > 0) {
+      message.warning(`跳过 ${skipCount} 条已存在的日报`);
+    }
+
+    showImportModal.value = false;
+  } catch (error) {
+    console.log('import error', error);
+    message.error('导入失败');
+  }
+};
+
 const handleExport = formData => {
   let exportReports = [...filteredReports.value];
 
@@ -662,6 +725,11 @@ defineExpose({
     align-items: center;
     padding: 20px;
     border-bottom: 1px solid #e2e8f0;
+  }
+
+  .action-buttons {
+    display: flex;
+    gap: 12px;
   }
 
   .record-count {
