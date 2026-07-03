@@ -224,7 +224,7 @@ import { ref, reactive, computed, onMounted, onUnmounted, h, nextTick } from 'vu
 import { useMessage, useDialog } from 'naive-ui';
 import { useRouter } from 'vue-router';
 import dayjs from 'dayjs';
-import { NButton, NTag, NDropdown, NIcon } from 'naive-ui';
+import { NButton, NTag, NDropdown, NIcon, NSwitch } from 'naive-ui';
 import { Search, Reset, Edit, Delete, Calendar } from '@vicons/carbon';
 import EmptySvg from '@/assets/images/empty.svg';
 import { exportToMarkdown, exportToCSV } from '@/utils/export';
@@ -309,6 +309,17 @@ const columns = [
       dayjs(row.date).day() !== 0 && dayjs(row.date).day() !== 6
         ? h(NTag, { type: 'success' }, () => '是')
         : h(NTag, { type: 'error' }, () => '否'),
+  },
+  {
+    title: '同步至企业微信日报',
+    key: 'syncWeChat',
+    align: 'center',
+    minWidth: 140,
+    render: row =>
+      h(NSwitch, {
+        value: row.syncWeChat || false,
+        onChange: val => handleSyncWeChat(row, val),
+      }),
   },
   {
     title: '操作',
@@ -516,6 +527,21 @@ const handleChangeDate = async newDateStr => {
   } catch (error) {
     console.log('err', error);
     message.error('日期修改失败');
+  }
+};
+
+const handleSyncWeChat = async (row, val) => {
+  try {
+    const reportData = JSON.parse(JSON.stringify(row));
+    reportData.syncWeChat = val;
+    await saveReportDB(reportData);
+    await loadReports();
+    if (val) {
+      message.success('已同步至企业微信');
+    }
+  } catch (error) {
+    console.log('sync error', error);
+    message.error('同步失败');
   }
 };
 
